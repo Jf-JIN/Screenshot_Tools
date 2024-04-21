@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QMouseEvent
 from User_interface import *
 import keyboard
 import sys
@@ -7,18 +8,42 @@ class ViewWindow(QWidget):
     closed_signal = pyqtSignal()
     def __init__(self, view_image, win_geometry):
         super().__init__()
+        self.view_image = view_image
         self.setWindowFlag(Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setGeometry(win_geometry)  # 设置窗口位置和大小
         self.view = QLabel(self)
-        self.view.setPixmap(view_image)
+        self.view.setPixmap(self.view_image)
+        self.start_point = None
+        self.end_point = None
+        self.temp_pixmap = QPixmap(view_image.size())
+    
+    def paintEvent(self, event):
+        painter = QPainter(self.view.pixmap())
+        painter.fillRect(self.view.pixmap().rect(), QColor(0, 0, 0, 0)) 
+        if self.start_point and self.end_point:
+            start_x = min(self.start_point.x(), self.end_point.x())
+            start_y = min(self.start_point.y(), self.end_point.y())
+            width = abs(self.end_point.x() - self.start_point.x())
+            height = abs(self.end_point.y() - self.start_point.y())
+            painter.setPen(QColor(255, 0, 0))  # 设置画笔颜色为黑色
+            painter.setBrush(QColor(0, 0, 0, 0))  # 设置填充颜色为红色
+            painter.drawRect(start_x, start_y, width, height)
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self.start_point = event.pos()
             print('左键按下')
         elif event.button() == Qt.RightButton:
-            print('右键按下')
             self.closed_signal.emit()  # 发射关闭信号
             self.close()
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.end_point = event.pos()
+            self.update()
+            self.view.setPixmap(self.view_image) # 覆盖之前的绘制的图形
+    def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.RightButton:
+            self.end_point = event.pos()
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.closed_signal.emit()  # 发射关闭信号
