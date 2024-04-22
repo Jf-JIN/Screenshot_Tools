@@ -26,8 +26,8 @@ class ViewWindow(QWidget):
             start_y = min(self.start_point.y(), self.end_point.y())
             width = abs(self.end_point.x() - self.start_point.x())
             height = abs(self.end_point.y() - self.start_point.y())
-            painter.setPen(QColor(255, 0, 0))  # 设置画笔颜色为黑色
-            painter.setBrush(QColor(0, 0, 0, 0))  # 设置填充颜色为红色
+            painter.setPen(QColor(255, 0, 0))  # 设置画笔颜色为红色
+            painter.setBrush(QColor(0, 0, 0, 0))  # 设置填充颜色为透明
             painter.drawRect(start_x, start_y, width, height)
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -53,11 +53,10 @@ class Main(Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.connection()
-        self.temp_png_path = "1.png"
         self.windows = []
     
     def connection(self):
-        self.new_toolbar_action.triggered.connect(self.create_canvas)
+        self.screenshot_toolbar.triggered.connect(self.create_canvas)
     
     def create_canvas(self):
         self.hide()
