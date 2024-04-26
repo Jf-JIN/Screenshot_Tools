@@ -39,7 +39,7 @@ class Ui_MainWindow(QMainWindow):
             self.screens_info_in_label_text += f' 第{i+1}屏幕尺寸：({self.screen_size_all[i].size().width()}, {self.screen_size_all[i].size().height()})'
         self.screen_size_tuple = tuple(temp_list)
         del temp_list
-        print(QApplication.screens()[1].geometry())
+        # print(QApplication.screens()[1].geometry())
     
     def menubar_init(self):
         self.menubar = QMenuBar()
@@ -56,10 +56,12 @@ class Ui_MainWindow(QMainWindow):
         self.addToolBar(self.toolbar)
         self.screenshot_toolbar = QAction(self.icon_setup(SCREENSHOT), '截图',self)
         self.toolbar.addAction(self.screenshot_toolbar)
-        self.screenshot_in_area_toolbar = QAction(self.icon_setup(SCREENSHOT_IN_AREA), '截图',self)
-        self.toolbar.addAction(self.screenshot_in_area_toolbar)
         self.ruler_toolbar = QAction(self.icon_setup(RULER), '截图',self)
         self.toolbar.addAction(self.ruler_toolbar)
+        self.ruler_in_rect_toolbar = QAction(self.icon_setup(RULER_IN_RECT), '截图',self)
+        self.toolbar.addAction(self.ruler_in_rect_toolbar)
+        self.ruler_in_window_toolbar = QAction(self.icon_setup(RULER_IN_WINDOW), '截图',self)
+        self.toolbar.addAction(self.ruler_in_window_toolbar)
     
     def statusbar_init(self):
         self.statusbar_win_mouse = QStatusBar()
