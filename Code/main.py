@@ -4,6 +4,63 @@ import keyboard
 import sys
 import time
 
+class MagnifierWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setMouseTracking(True)
+        
+        self.area_size = 50
+        self.magnifier_faktor = 3
+        self.label_mouse_position_height = 15
+        self.magnifier_size = self.area_size * self.magnifier_faktor
+        self.resize(self.magnifier_size, self.magnifier_size)
+
+        self.label = QLabel(self)
+        self.label_mouse_position = QLabel(self)
+        # self.label_mouse_position.setContentsMargins(10,0, 0, 0)
+        self.label_mouse_position.setStyleSheet("background-color: #FFFFFF")
+        self.label_mouse_position.setFixedWidth(self.magnifier_size)
+        self.label_mouse_position.setFixedHeight(self.label_mouse_position_height)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+        layout.addWidget(self.label_mouse_position)
+        
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+    # def showEvent(self, event):
+    #     self.updateMagnifier()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 100))  # 绘制半透明背景
+        super().paintEvent(event)
+
+    def updateMagnifier(self):
+        if not self.parent():
+            return
+
+        # 获取鼠标附近的区域
+        area_rect =  QRect(self.parent().mapFromGlobal(QCursor.pos()), QSize(self.area_size, self.area_size))
+        mouse_rect = QRect(self.parent().mapFromGlobal(QCursor.pos()), QSize(self.magnifier_size, self.magnifier_size))
+        
+        # 确保放大镜窗口不会超出父窗口的边界
+        # mouse_rect.moveTo(max(0, min(mouse_rect.x(), self.parent().width() - self.magnifier_size)),
+        #                 max(0, min(mouse_rect.y(), self.parent().height() - self.magnifier_size)))
+        self.setGeometry(mouse_rect.x(), mouse_rect.y(), mouse_rect.width(),mouse_rect.height()+self.label_mouse_position_height)
+        pixmap = self.parent().grab(area_rect)
+        print(pixmap)
+        w = area_rect.width() * self.magnifier_faktor
+        h = area_rect.height() * self.magnifier_faktor
+        pixmap = pixmap.scaled(w, h, aspectRatioMode=1)
+        # pixmap = pixmap.scaled(self.magnifier_size, self.magnifier_size, Qt.IgnoreAspectRatio, Qt.FastTransformation)
+        # self.label.setPixmap(pixmap)
+        self.label_mouse_position.setText(f'(x: {QCursor.pos().x()}, y: {QCursor.pos().y()})')
+
+
 class ViewWindow(QWidget):
     closed_signal = pyqtSignal()
     def __init__(self, view_image, win_geometry):
@@ -17,6 +74,7 @@ class ViewWindow(QWidget):
         self.start_point = None
         self.end_point = None
         self.temp_pixmap = QPixmap(view_image.size())
+        self.magnifier = MagnifierWidget(self)
     
     def paintEvent(self, event):
         painter = QPainter(self.view.pixmap())
@@ -41,6 +99,8 @@ class ViewWindow(QWidget):
             self.end_point = event.pos()
             self.update()
             self.view.setPixmap(self.view_image) # 覆盖之前的绘制的图形
+            self.magnifier.show()
+            self.magnifier.updateMagnifier()
     def mouseReleaseEvent(self, event) -> None:
         if event.button() == Qt.RightButton:
             self.end_point = event.pos()
