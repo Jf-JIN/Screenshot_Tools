@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QToolBar, QStatusBar, QLabel, QAction, QWidget, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QToolBar, QStatusBar, QLabel, QAction, QWidget, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy, QFrame
 from PyQt5.QtGui import QPixmap, QIcon, QCursor, QFont,QPainter, QColor
 from PyQt5.QtCore import Qt, QByteArray, QObject, QEvent, pyqtSignal, QRect, QSize
 from Icon_svg import *
@@ -27,7 +27,6 @@ class Ui_MainWindow(QMainWindow):
     def ui_init(self):
         self.setWindowTitle("截图小工具")
         self.setGeometry(600, 400, 800, 100)  # 设置窗口位置和大小
-        # self.setMaximumHeight(100)
         self.label_init()
     
     def parameter_init(self):
@@ -54,12 +53,12 @@ class Ui_MainWindow(QMainWindow):
         self.toolbar = QToolBar()
         self.toolbar.setMovable(False)
         self.addToolBar(self.toolbar)
-        self.screenshot_toolbar = QAction(self.icon_setup(SCREENSHOT), '截图',self)
-        self.toolbar.addAction(self.screenshot_toolbar)
-        self.ruler_toolbar = QAction(self.icon_setup(RULER), '截图',self)
-        self.toolbar.addAction(self.ruler_toolbar)
         self.ruler_in_rect_toolbar = QAction(self.icon_setup(RULER_IN_RECT), '截图',self)
         self.toolbar.addAction(self.ruler_in_rect_toolbar)
+        self.ruler_toolbar = QAction(self.icon_setup(RULER), '截图',self)
+        self.toolbar.addAction(self.ruler_toolbar)
+        self.a_toolbar = QAction(self.icon_setup(RULER_IN_RECT), '截图',self)
+        self.toolbar.addAction(self.a_toolbar)
         self.ruler_in_window_toolbar = QAction(self.icon_setup(RULER_IN_WINDOW), '截图',self)
         self.toolbar.addAction(self.ruler_in_window_toolbar)
     
