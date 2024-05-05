@@ -1,6 +1,5 @@
 from PyQt5.QtGui import QCloseEvent, QMouseEvent
 from User_interface import *
-import keyboard
 import sys
 import time
 import win32gui
@@ -33,12 +32,19 @@ class MagnifierWidget(QWidget):
         self.label_init(self.label_area_size)
         self.label_init(self.label_exit_method)
         
+        self.frame_label_info = QFrame(self)
+        frame_layout = QVBoxLayout(self)
+        frame_layout.addWidget(self.label_mouse_position_start)
+        frame_layout.addWidget(self.label_mouse_position_end)
+        frame_layout.addWidget(self.label_area_size)
+        frame_layout.addWidget(self.label_exit_method)
+        self.frame_label_info.setLayout(frame_layout)
+        frame_layout.setContentsMargins(0, 0, 0, 0)
+        frame_layout.setSpacing(0)
+        
         layout = QVBoxLayout(self)
         layout.addWidget(self.label_magnifier)
-        layout.addWidget(self.label_mouse_position_start)
-        layout.addWidget(self.label_mouse_position_end)
-        layout.addWidget(self.label_area_size)
-        layout.addWidget(self.label_exit_method)
+        layout.addWidget(self.frame_label_info)
         layout.addItem(self.spacer_item)
         self.setLayout(layout)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -59,7 +65,7 @@ class MagnifierWidget(QWidget):
         mouse_rect = QRect(self.parent_MagniferWidget.mapFromGlobal(QCursor.pos()), QSize(self.magnifier_size, self.magnifier_size))
         # 确保放大镜窗口不会超出父窗口的边界
         mouse_rect.moveTo(max(0, min(mouse_rect.x(), self.parent_MagniferWidget.width() - self.magnifier_size)),
-                        max(0, min(mouse_rect.y(), self.parent_MagniferWidget.height() - self.magnifier_size)))
+                        max(0, min(mouse_rect.y(), self.parent_MagniferWidget.height() - self.magnifier_size - self.frame_label_info.size().height())))
         
         self.setGeometry(mouse_rect.x(), mouse_rect.y(), mouse_rect.width(),mouse_rect.height()+self.label_mouse_position_height)
         pixmap = self.parent_MagniferWidget.grab(area_rect)
@@ -189,7 +195,7 @@ class Main(Ui_MainWindow):
         self.windows = []
     
     def connection(self) -> None:
-        self.screenshot_toolbar.triggered.connect(self.create_canvas)
+        self.ruler_in_rect_toolbar.triggered.connect(self.create_canvas)
     
     def create_canvas(self) -> None:
         self.hide()
