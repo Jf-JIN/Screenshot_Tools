@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QToolBar, QStatusBar, QLabel, QAction, QWidget, QHBoxLayout, QVBoxLayout, QSpacerItem, QSizePolicy, QFrame
 from PyQt5.QtGui import QPixmap, QIcon, QCursor, QFont,QPainter, QColor
-from PyQt5.QtCore import Qt, QByteArray, QObject, QEvent, pyqtSignal, QRect, QSize
+from PyQt5.QtCore import Qt, QByteArray, QObject, QEvent, pyqtSignal, QRect, QSize, QPoint
 from Icon_svg import *
 
 class WinEventFilter(QObject):
