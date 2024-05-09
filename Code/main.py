@@ -108,12 +108,13 @@ class MagnifierWidget(QWidget):
     # 判断左上右下的顶点位置，并更新显示
     def lefttop_rightbottom_points_display(self) -> None:
         # 默认从左上向右下移动
-        # if 标签是否显示为相对坐标 == True:
-            # lt = [self.parent_MagniferWidget.start_point.x(), self.parent_MagniferWidget.start_point.y()]
-            # rb = [self.parent_MagniferWidget.end_point.x(), self.parent_MagniferWidget.end_point.y()]
-        # else:
-        lt = [self.parent_MagniferWidget.start_point_global.x(), self.parent_MagniferWidget.start_point_global.y()]
-        rb = [self.parent_MagniferWidget.end_point_global.x(), self.parent_MagniferWidget.end_point_global.y()]
+        if self.parent_MagniferWidget.parent_ScreenWindow.app_setting['relativ_position'] == True:
+            lt = [self.parent_MagniferWidget.start_point.x(), self.parent_MagniferWidget.start_point.y()]
+            rb = [self.parent_MagniferWidget.end_point.x(), self.parent_MagniferWidget.end_point.y()]
+        else:
+            lt = [self.parent_MagniferWidget.start_point_global.x(), self.parent_MagniferWidget.start_point_global.y()]
+            rb = [self.parent_MagniferWidget.end_point_global.x(), self.parent_MagniferWidget.end_point_global.y()]
+        
         self.left_move_flag = False
         self.top_move_flag = False
         if lt[0] > rb[0]:
@@ -126,6 +127,7 @@ class MagnifierWidget(QWidget):
             lt[1] = rb[1]
             rb[1] = temp
             self.top_move_flag = True
+        self.unit_conversion(lt, rb)
         diagonal = ((rb[0]-lt[0])**2 + (rb[1]-lt[1])**2)**0.5
         diagonal_str = '{:.4f}'.format(diagonal)
         angle = math.asin((rb[1]-lt[1])/diagonal)
@@ -139,6 +141,17 @@ class MagnifierWidget(QWidget):
         self.label_area_diagonal_angle.setText(f'对角线角度: {angle_str}, {angle_degree_str}°')
         self.lefttop_xy = lt
         self.rightbottom_xy = rb
+    
+    def unit_conversion(self, lt, rb):
+        measure_unit = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['measure_unit']
+        screen_num = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['screenshot_screen']
+        screnn_dpi = self.parent_MagniferWidget.parent_ScreenWindow.screens_info_list[screen_num]['logical_dpi']
+        print(screnn_dpi)
+        if measure_unit == 'px':
+            return lt, rb
+        elif measure_unit == 'pt':
+            pass
+        
 
 class ScreenWindow(QWidget):
     closed_signal = pyqtSignal()
@@ -257,14 +270,19 @@ class Main(Ui_MainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.connection()
+        self.measure_unit_option_changed()
         self.windows = []
     
     def connection(self) -> None:
         self.ruler_in_rect_toolbar.triggered.connect(self.create_canvas)
         self.all_screen_select_menu.triggered.connect(self.action_select_screen_changed)
-        for index, screen_item in enumerate(self.screens_info_list):
+        for screen_item in self.screens_info_list:
             action = screen_item['select_action']
             action.triggered.connect(partial(self.action_select_screen_changed)) # 这里一定要用partial
+        for position_select in self.position_select_menu_action_list:
+            position_select.triggered.connect(partial(self.position_option_changed))
+        for measure_unit in self.measure_unit_menu_action_list:
+            measure_unit.triggered.connect(partial(self.measure_unit_option_changed))
     
     def action_select_screen_changed(self):
         for index, item in enumerate(self.screen_select_menu_action_list):
@@ -272,6 +290,33 @@ class Main(Ui_MainWindow):
                 self.app_setting['screenshot_screen'] = index
                 self.write_setting_file()
                 self.screen_select_label.setText(f"当前截取：{self.screen_select_menu_action_list[self.app_setting['screenshot_screen']].text()}")
+        self.measure_unit_option_changed()
+    
+    def position_option_changed(self):
+        for _, item in enumerate(self.position_select_menu_action_list):
+            if item.isChecked() and item.text() == '相对坐标':
+                self.app_setting['relativ_position'] = True
+                
+            else:
+                self.app_setting['relativ_position'] = False
+        self.write_setting_file()
+    
+    def measure_unit_option_changed(self):
+        for item in self.measure_unit_menu_action_list:
+            unit = item.text().split('(')[1].split(')')[0]
+            item.setEnabled(False)
+            if self.app_setting['screenshot_screen'] == 0:
+                self.app_setting['screenshot_screen'] = 0
+                self.measure_unit_menu_action_list[0].setChecked(True)
+                if unit == 'px':
+                    item.setEnabled(True)
+                    self.app_setting['measure_unit'] = unit
+            else:
+                item.setEnabled(True)
+                if item.isChecked():
+                    self.app_setting['measure_unit'] = unit
+        print(self.app_setting)
+        self.write_setting_file()
     
     def create_canvas(self) -> None:
         self.hide()
