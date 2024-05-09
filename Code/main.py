@@ -127,30 +127,68 @@ class MagnifierWidget(QWidget):
             lt[1] = rb[1]
             rb[1] = temp
             self.top_move_flag = True
-        self.unit_conversion(lt, rb)
-        diagonal = ((rb[0]-lt[0])**2 + (rb[1]-lt[1])**2)**0.5
+        lt_conversion, rb_conversion, area_size_width_height, diagonal = self.unit_conversion(lt, rb)
+        unit = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['measure_unit']
+        if unit in ['pt', 'dp', 'sp', 'rpx', 'vw', 'vh', 'vm', 'cm', 'mm', 'inch']:
+            for i in range(2):
+                lt_conversion[i] = '{:.2f}'.format(lt_conversion[i])
+                rb_conversion[i] = '{:.2f}'.format(rb_conversion[i])
+                area_size_width_height[i] = '{:.2f}'.format(area_size_width_height[i])
+        elif unit in ['px']:
+            for i in range(2):
+                lt_conversion[i] = int(lt_conversion[i])
+                rb_conversion[i] = int(rb_conversion[i])
+                area_size_width_height[i] = int(area_size_width_height[i])
         diagonal_str = '{:.4f}'.format(diagonal)
-        angle = math.asin((rb[1]-lt[1])/diagonal)
+        angle = math.asin((rb[1]-lt[1])/(((rb[0]-lt[0])**2 + (rb[1]-lt[1])**2)**0.5))
         angle_str = '{:.4f}'.format(angle)
         angle_degree = math.degrees(angle)
         angle_degree_str = '{:.2f}'.format(angle_degree)
-        self.label_mouse_position_start.setText(f'左上 [x: {lt[0]}, y: {lt[1]}]')
-        self.label_mouse_position_end.setText(f'右下 [x: {rb[0]}, y: {rb[1]}]')
-        self.label_area_size.setText(f'区域 [宽: {rb[0]-lt[0]}, 高: {rb[1]-lt[1]}]')
+        self.label_mouse_position_start.setText(f'左上 [x: {lt_conversion[0]}, y: {lt_conversion[1]}]')
+        self.label_mouse_position_end.setText(f'右下 [x: {rb_conversion[0]}, y: {rb_conversion[1]}]')
+        self.label_area_size.setText(f'区域 [宽: {area_size_width_height[0]}, 高: {area_size_width_height[1]}]')
         self.label_area_diagonal.setText(f'对角线长度: {diagonal_str}')
-        self.label_area_diagonal_angle.setText(f'对角线角度: {angle_str}, {angle_degree_str}°')
+        self.label_area_diagonal_angle.setText(f'对角线角度: {angle_str}  {angle_degree_str}°')
         self.lefttop_xy = lt
         self.rightbottom_xy = rb
     
+    # 变换单位
     def unit_conversion(self, lt, rb):
         measure_unit = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['measure_unit']
-        screen_num = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['screenshot_screen']
-        screnn_dpi = self.parent_MagniferWidget.parent_ScreenWindow.screens_info_list[screen_num]['logical_dpi']
-        print(screnn_dpi)
-        if measure_unit == 'px':
-            return lt, rb
-        elif measure_unit == 'pt':
-            pass
+        screen_num = self.parent_MagniferWidget.parent_ScreenWindow.app_setting['screenshot_screen']-1
+        screen_info = self.parent_MagniferWidget.parent_ScreenWindow.screens_info_list[screen_num]
+        temp = [lt[0], lt[1], rb[0], rb[1], rb[0]-lt[0], rb[1]-lt[1], ((rb[0]-lt[0])**2 + (rb[1]-lt[1])**2)**0.5]
+        for index, value in enumerate(temp):
+            if measure_unit == 'px':
+                pass
+            elif measure_unit == 'pt':
+                scale_factor = screen_info['logical_size'].width() / screen_info['physical_size'].width()
+                temp[index] = value / scale_factor / 25.4 * 72
+            elif measure_unit == 'dp':
+                density_scale_factor = screen_info['physical_size_x'] / screen_info['logical_size_x']
+                temp[index] = value / density_scale_factor
+            elif measure_unit == 'sp':
+                density_scale_factor = screen_info['logical_dpi_x'] / screen_info['physical_dpi_x']
+                temp[index] = value / density_scale_factor
+            elif measure_unit == 'rpx':
+                scale_factor = screen_info['logical_dpi'] / 750
+                temp[index] = value / scale_factor
+            elif measure_unit == 'vw':
+                pass
+            elif measure_unit == 'vh':
+                pass
+            elif measure_unit == 'vm':
+                pass
+            elif measure_unit == 'cm':
+                scale_factor = screen_info['logical_size'].width() / screen_info['physical_size'].width()
+                temp[index] = value / scale_factor / 10
+            elif measure_unit == 'mm':
+                scale_factor = screen_info['logical_size'].width() / screen_info['physical_size'].width()
+                temp[index] = value / scale_factor
+            elif measure_unit == 'inch':
+                scale_factor = screen_info['logical_size'].width() / screen_info['physical_size'].width()
+                temp[index] = value / scale_factor / 25.4
+        return [temp[0], temp[1]], [temp[2], temp[3]], [temp[4], temp[5]], temp[6]
         
 
 class ScreenWindow(QWidget):
@@ -296,7 +334,6 @@ class Main(Ui_MainWindow):
         for _, item in enumerate(self.position_select_menu_action_list):
             if item.isChecked() and item.text() == '相对坐标':
                 self.app_setting['relativ_position'] = True
-                
             else:
                 self.app_setting['relativ_position'] = False
         self.write_setting_file()
@@ -315,7 +352,6 @@ class Main(Ui_MainWindow):
                 item.setEnabled(True)
                 if item.isChecked():
                     self.app_setting['measure_unit'] = unit
-        print(self.app_setting)
         self.write_setting_file()
     
     def create_canvas(self) -> None:
@@ -324,6 +360,7 @@ class Main(Ui_MainWindow):
         image = self.get_screenshot()
         self.show()
         self.start_measure_flag = True
+        self.windows = []
         
         # 遍历所有屏幕并创建窗口
         if self.all_screen_select_menu.isChecked():
@@ -339,6 +376,7 @@ class Main(Ui_MainWindow):
             window = ScreenWindow(self, image[index-1], self.all_screens[index-1].geometry())
             window.closed_signal.connect(self.on_window_closed)
             window.show()
+            self.windows.append(window)
         
     def get_screenshot(self) -> list:
         self.screenshot_list = []
@@ -350,9 +388,13 @@ class Main(Ui_MainWindow):
     
     def on_window_closed(self) -> None:
         # 关闭其他窗口
-        for window in self.windows:
-            window.close()
-        # self.windows = []
+        if self.windows:
+            for window in self.windows:
+                window.close()
+    
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self.on_window_closed()
+        return
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
