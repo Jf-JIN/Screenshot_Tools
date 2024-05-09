@@ -1,13 +1,14 @@
 from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import QWidget
 from User_interface import *
-import sys
+
 import time
 import win32gui
 # from ctypes import windll
 from ctypes import wintypes
 import ctypes
 from functools import partial
+import math
 
 
 '''
@@ -36,10 +37,14 @@ class MagnifierWidget(QWidget):
         self.label_mouse_position_start = QLabel(self)
         self.label_mouse_position_end = QLabel(self)
         self.label_area_size = QLabel(self)
+        self.label_area_diagonal = QLabel(self)
+        self.label_area_diagonal_angle = QLabel(self)
         self.label_exit_method = QLabel(self)
         self.label_init(self.label_mouse_position_start)
         self.label_init(self.label_mouse_position_end)
         self.label_init(self.label_area_size)
+        self.label_init(self.label_area_diagonal)
+        self.label_init(self.label_area_diagonal_angle)
         self.label_init(self.label_exit_method)
         
         self.frame_label_info = QFrame(self)
@@ -47,6 +52,8 @@ class MagnifierWidget(QWidget):
         frame_layout.addWidget(self.label_mouse_position_start)
         frame_layout.addWidget(self.label_mouse_position_end)
         frame_layout.addWidget(self.label_area_size)
+        frame_layout.addWidget(self.label_area_diagonal)
+        frame_layout.addWidget(self.label_area_diagonal_angle)
         frame_layout.addWidget(self.label_exit_method)
         self.frame_label_info.setLayout(frame_layout)
         frame_layout.setContentsMargins(0, 0, 0, 0)
@@ -73,7 +80,6 @@ class MagnifierWidget(QWidget):
         # 获取鼠标附近的区域
         # print(self.parent_MagniferWidget.mouse_position.x())
         area_rect =  QRect(self.parent_MagniferWidget.mapFromGlobal(QCursor.pos()), QSize(self.near_mouse_area_size, self.near_mouse_area_size))
-        # mouse_rect = QRect(self.parent_MagniferWidget.mapFromGlobal(QCursor.pos()), QSize(self.magnifier_size, self.magnifier_size))
         if not self.parent_MagniferWidget.mouse_position_relativ_windows:
             self.label_magnifier.hide()
             self.frame_label_info.hide()
@@ -81,11 +87,6 @@ class MagnifierWidget(QWidget):
             mouse_rect = QRect(self.parent_MagniferWidget.mouse_position_relativ_windows, QSize(self.magnifier_size, self.magnifier_size))
             self.label_magnifier.show()
             self.frame_label_info.show()
-        # area_rect =  QRect(QCursor.pos(), QSize(self.near_mouse_area_size, self.near_mouse_area_size))
-        # mouse_rect = QRect(QCursor.pos(), QSize(self.magnifier_size, self.magnifier_size))
-        # if QCursor.pos().x() < 0 and QCursor.pos().y() < 0:
-        #     mouse_rect.moveTo(self.rect.left()+self.parent_MagniferWidget.mapFromGlobal(QCursor.pos().x()), self.rect.top()+self.parent_MagniferWidget.mapFromGlobal(QCursor.pos().y()))
-        # mouse_rect = QRect(self.mouse_position_relativ_windows, QSize(self.magnifier_size, self.magnifier_size))
         
             # 确保放大镜窗口不会超出父窗口的边界
             # x基础范围：0 到 最大坐标减去放大镜窗口大小。 在此基础上加上原窗口相对屏幕的坐标，这就实现了在不同窗口中的约束。 y方向同理
@@ -125,12 +126,20 @@ class MagnifierWidget(QWidget):
             lt[1] = rb[1]
             rb[1] = temp
             self.top_move_flag = True
+        diagonal = ((rb[0]-lt[0])**2 + (rb[1]-lt[1])**2)**0.5
+        diagonal_str = '{:.4f}'.format(diagonal)
+        angle = math.asin((rb[1]-lt[1])/diagonal)
+        angle_str = '{:.4f}'.format(angle)
+        angle_degree = math.degrees(angle)
+        angle_degree_str = '{:.2f}'.format(angle_degree)
         self.label_mouse_position_start.setText(f'左上 [x: {lt[0]}, y: {lt[1]}]')
         self.label_mouse_position_end.setText(f'右下 [x: {rb[0]}, y: {rb[1]}]')
         self.label_area_size.setText(f'区域 [宽: {rb[0]-lt[0]}, 高: {rb[1]-lt[1]}]')
+        self.label_area_diagonal.setText(f'对角线长度: {diagonal_str}')
+        self.label_area_diagonal_angle.setText(f'对角线角度: {angle_str}, {angle_degree_str}°')
         self.lefttop_xy = lt
         self.rightbottom_xy = rb
-    
+
 class ScreenWindow(QWidget):
     closed_signal = pyqtSignal()
     def __init__(self, parent, view_image, win_geometry) -> None:
@@ -207,7 +216,7 @@ class ScreenWindow(QWidget):
     
     # 鼠标移动事件
     def mouseMoveEvent(self, event) -> None:
-        if event.buttons() == Qt.LeftButton:
+        if event.buttons() == Qt.LeftButton and self.parent_ScreenWindow.start_measure_flag:
             self.mouse_position = event.pos()
             self.end_point = event.pos()
             self.end_point_global = QCursor.pos()
@@ -230,9 +239,12 @@ class ScreenWindow(QWidget):
         if event.key() == Qt.Key_Escape:
             self.widget_close()
             self.closed_signal.emit() 
+            
     
     # 关闭窗口
     def widget_close(self) -> None:
+        self.parent_ScreenWindow.start_measure_flag = False
+        # print(self.parent_ScreenWindow.start_measure_flag)
         self.magnifier.close()
         self.close()
     
@@ -249,33 +261,39 @@ class Main(Ui_MainWindow):
     
     def connection(self) -> None:
         self.ruler_in_rect_toolbar.triggered.connect(self.create_canvas)
+        self.all_screen_select_menu.triggered.connect(self.action_select_screen_changed)
         for index, screen_item in enumerate(self.screens_info_list):
             action = screen_item['select_action']
-            # action.triggered.connect(partial(self.screen_action_test_print, index))
-            action.triggered.connect(partial(self.action_select_screen_changed))
+            action.triggered.connect(partial(self.action_select_screen_changed)) # 这里一定要用partial
     
     def action_select_screen_changed(self):
-        for index, item in enumerate(self.all_screen_select_menu_action_list):
-            print(index, item)
+        for index, item in enumerate(self.screen_select_menu_action_list):
             if item.isChecked():
-                print('中')
-        print('结束\n\n')
+                self.app_setting['screenshot_screen'] = index
+                self.write_setting_file()
+                self.screen_select_label.setText(f"当前截取：{self.screen_select_menu_action_list[self.app_setting['screenshot_screen']].text()}")
     
-    # def screen_action_test_print(self, screen):
-        # print(screen)
-        
     def create_canvas(self) -> None:
         self.hide()
-        time.sleep(0.3)
+        time.sleep(0.25)
         image = self.get_screenshot()
         self.show()
+        self.start_measure_flag = True
         
         # 遍历所有屏幕并创建窗口
-        for index, screen in enumerate(self.all_screens):
-            window = ScreenWindow(self, image[index], screen.geometry())
+        if self.all_screen_select_menu.isChecked():
+            for index, screen in enumerate(self.all_screens):
+                window = ScreenWindow(self, image[index], screen.geometry())
+                window.closed_signal.connect(self.on_window_closed)
+                window.show()
+                self.windows.append(window)
+        else:
+            index = self.app_setting['screenshot_screen']
+            # print(index-1)
+            # print(self.all_screens)
+            window = ScreenWindow(self, image[index-1], self.all_screens[index-1].geometry())
             window.closed_signal.connect(self.on_window_closed)
             window.show()
-            self.windows.append(window)
         
     def get_screenshot(self) -> list:
         self.screenshot_list = []
@@ -289,6 +307,7 @@ class Main(Ui_MainWindow):
         # 关闭其他窗口
         for window in self.windows:
             window.close()
+        # self.windows = []
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
