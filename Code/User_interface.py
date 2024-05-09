@@ -42,7 +42,7 @@ class Ui_MainWindow(QMainWindow):
         self.screens_info_in_label_text = ''
         self.standard_setting_info = {
             'screenshot_screen': 0,
-            'measure_unit': ['px', 'pt', 'dp', 'sp', 'rpx', 'rem', 'em', 'vw', 'vh', 'vm', 'cm', 'mm', 'inch'],
+            'measure_unit': ['px', 'pt', 'rpx', 'rem', 'em', 'vw', 'vh', 'vm', 'cm', 'mm', 'inch'],
             'magnifier_display': True,
             'magnifier_display_keep': False,
             'magnifier_extend': 3,
@@ -147,6 +147,7 @@ class Ui_MainWindow(QMainWindow):
             }
             self.screens_info_list.append(temp_info_dict)
             self.screens_info_in_label_text += f' 第{index+1}屏幕尺寸：({screen.size().width()}, {screen.size().height()})'
+        print(self.screens_info_list)
     
     def menubar_init(self):
         self.menubar = QMenuBar()
@@ -189,8 +190,6 @@ class Ui_MainWindow(QMainWindow):
         self.measure_unit_menu_action_group = QActionGroup(self)
         self.measure_unit_px_action = self.action_init('像素(px)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_point_action = self.action_init('点(pt)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_dp_action =  self.action_init('独立像素(dp)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_sp_action =  self.action_init('比例像素(sp)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_rpx_action =  self.action_init('响应式像素(rpx)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_vw_action =  self.action_init('视口宽度百分比(vw)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_vh_action =  self.action_init('视口高度百分比(vh)', measure_unit_menu, self.measure_unit_menu_action_group)
