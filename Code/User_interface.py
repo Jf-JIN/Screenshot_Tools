@@ -22,6 +22,7 @@ class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.parameter_init()
+        print(self.app_setting)
         self.menubar_init()
         self.toolbar_init()
         self.statusbar_init()
@@ -38,7 +39,7 @@ class Ui_MainWindow(QMainWindow):
     
     def parameter_init(self):
         self.start_measure_flag = False
-        self.screens_info_list = []
+        self.screens_info_list = [] # 列表下每个屏幕一个字典，字典内容在 get_screens_info 中定义
         self.screens_info_in_label_text = ''
         self.standard_setting_info = {
             'screenshot_screen': 0,
@@ -178,7 +179,7 @@ class Ui_MainWindow(QMainWindow):
         self.position_select_relativ_action = self.action_init('相对坐标', position_select_menu, self.position_select_menu_action_group)
         self.position_select_menu_action_list = self.position_select_menu_action_group.actions()
         print(self.app_setting)
-        # self.position_select_menu_action_list[self.app_setting['relativ_position']].setChecked(True)
+        self.position_select_menu_action_list[self.app_setting['relativ_position']].setChecked(True)
         # --------------------测量单位设置--------------------
         
         measure_unit_menu = self.option_menu.addMenu('测量单位')
@@ -198,6 +199,8 @@ class Ui_MainWindow(QMainWindow):
         self.measure_unit_vm_action =  self.action_init('视口单位(vm)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_menu_action_list = self.measure_unit_menu_action_group.actions()
         for action in self.measure_unit_menu_action_list:
+            print(action.text().split('(')[1].split(')')[0])
+            print(self.app_setting['measure_unit'])
             if action.text().split('(')[1].split(')')[0] == self.app_setting['measure_unit']:
                 action.setChecked(True)
                 break
