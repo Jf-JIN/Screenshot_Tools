@@ -22,7 +22,6 @@ class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.parameter_init()
-        print(self.app_setting)
         self.menubar_init()
         self.toolbar_init()
         self.statusbar_init()
@@ -43,7 +42,7 @@ class Ui_MainWindow(QMainWindow):
         self.screens_info_in_label_text = ''
         self.standard_setting_info = {
             'screenshot_screen': 0,
-            'measure_unit': ['px', 'pt', '%', 'ppi', 'dpi', 'dp', 'sp', 'rpx', 'rem', 'em', 'vw', 'vh', 'vm'],
+            'measure_unit': ['px', 'pt', 'dp', 'sp', 'rpx', 'rem', 'em', 'vw', 'vh', 'vm', 'cm', 'mm', 'inch'],
             'magnifier_display': True,
             'magnifier_display_keep': False,
             'magnifier_extend': 3,
@@ -85,7 +84,7 @@ class Ui_MainWindow(QMainWindow):
                                 else:
                                     self.repair_messagebox(value, repair_flag) 
                                     repair_flag = True
-                                if key == 'magnifier_extend' and self.app_setting[key] <= 1:
+                                if key == 'magnifier_extend' and self.app_setting[key] < 3:
                                     temp_dict[key] = self.repair_messagebox(value, repair_flag)
                                     repair_flag = True
                             elif type(value) == type(self.app_setting[key]):
@@ -136,10 +135,15 @@ class Ui_MainWindow(QMainWindow):
                 "select_action": None,
                 "number": index,
                 "top_left_bottom_right_point": top_left_bottom_right_point,
-                "size": screen.size(),
+                "logical_size": screen.size(),
+                "physical_size": screen.physicalSize(),
                 "geometry": screen.geometry(),
                 "available_geometry": screen.availableGeometry(),
-                "logical_dpi": screen.logicalDotsPerInch()
+                "logical_dpi": screen.logicalDotsPerInch(),
+                "physical_dpi": screen.physicalDotsPerInch(),
+                "logical_dpi_x": screen.logicalDotsPerInchX(),
+                "physical_dpi_x": screen.physicalDotsPerInchX()
+                
             }
             self.screens_info_list.append(temp_info_dict)
             self.screens_info_in_label_text += f' 第{index+1}屏幕尺寸：({screen.size().width()}, {screen.size().height()})'
@@ -178,7 +182,6 @@ class Ui_MainWindow(QMainWindow):
         self.position_select_absolute_action = self.action_init('绝对坐标', position_select_menu, self.position_select_menu_action_group)
         self.position_select_relativ_action = self.action_init('相对坐标', position_select_menu, self.position_select_menu_action_group)
         self.position_select_menu_action_list = self.position_select_menu_action_group.actions()
-        print(self.app_setting)
         self.position_select_menu_action_list[self.app_setting['relativ_position']].setChecked(True)
         # --------------------测量单位设置--------------------
         
@@ -186,21 +189,17 @@ class Ui_MainWindow(QMainWindow):
         self.measure_unit_menu_action_group = QActionGroup(self)
         self.measure_unit_px_action = self.action_init('像素(px)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_point_action = self.action_init('点(pt)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_percent_action = self.action_init('百分比(%)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_ppi_action =  self.action_init('像素密度(ppi)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_dpi_action =  self.action_init('每英寸点数(dpi)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_dp_action =  self.action_init('独立像素(dp)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_sp_action =  self.action_init('比例像素(sp)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_rpx_action =  self.action_init('响应式像素(rpx)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_rem_action =  self.action_init('根元素字体大小(rem)', measure_unit_menu, self.measure_unit_menu_action_group)
-        self.measure_unit_em_action =  self.action_init('文本字体尺寸(em)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_vw_action =  self.action_init('视口宽度百分比(vw)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_vh_action =  self.action_init('视口高度百分比(vh)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_vm_action =  self.action_init('视口单位(vm)', measure_unit_menu, self.measure_unit_menu_action_group)
+        self.measure_unit_vm_action =  self.action_init('厘米(cm)', measure_unit_menu, self.measure_unit_menu_action_group)
+        self.measure_unit_vm_action =  self.action_init('毫米(mm)', measure_unit_menu, self.measure_unit_menu_action_group)
+        self.measure_unit_vm_action =  self.action_init('英寸(inch)', measure_unit_menu, self.measure_unit_menu_action_group)
         self.measure_unit_menu_action_list = self.measure_unit_menu_action_group.actions()
         for action in self.measure_unit_menu_action_list:
-            print(action.text().split('(')[1].split(')')[0])
-            print(self.app_setting['measure_unit'])
             if action.text().split('(')[1].split(')')[0] == self.app_setting['measure_unit']:
                 action.setChecked(True)
                 break
