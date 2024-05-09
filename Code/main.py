@@ -146,11 +146,35 @@ class MagnifierWidget(QWidget):
         angle_degree_str = '{:.2f}'.format(angle_degree)
         self.label_mouse_position_start.setText(f'左上 [x: {lt_conversion[0]}, y: {lt_conversion[1]}]')
         self.label_mouse_position_end.setText(f'右下 [x: {rb_conversion[0]}, y: {rb_conversion[1]}]')
-        self.label_area_size.setText(f'区域 [宽: {area_size_width_height[0]}, 高: {area_size_width_height[1]}]')
+        self.label_area_size.setText(f' [宽: {area_size_width_height[0]}, 高: {area_size_width_height[1]}]')
         self.label_area_diagonal.setText(f'对角线长度: {diagonal_str}')
         self.label_area_diagonal_angle.setText(f'对角线角度: {angle_str}  {angle_degree_str}°')
         self.lefttop_xy = lt
         self.rightbottom_xy = rb
+    
+    # {'select_action': None, 
+    # 'number': 0, 
+    # 'top_left_bottom_right_point': [0, 0, 1920, 1080], 
+    # 'logical_size': PyQt5.QtCore.QSize(1920, 1080), 
+    # 'physical_size': PyQt5.QtCore.QSizeF(527.0, 296.0), 
+    # 'geometry': PyQt5.QtCore.QRect(0, 0, 1920, 1080), 
+    # 'available_geometry': PyQt5.QtCore.QRect(0, 0, 1920, 1032), 
+    # 'logical_dpi': 96.0, 
+    # 'physical_dpi': 92.60728755320785, 
+    # 'logical_dpi_x': 96.0, 
+    # 'physical_dpi_x': 92.53889943074003}, 
+
+    # {'select_action': None, 
+    # 'number': 1, 
+    # 'top_left_bottom_right_point': [-2560, 0, 0, 1600], 
+    # 'logical_size': PyQt5.QtCore.QSize(2560, 1600), 
+    # 'physical_size': PyQt5.QtCore.QSizeF(345.0, 215.0), 
+    # 'geometry': PyQt5.QtCore.QRect(-2560, 0, 2560, 1600), 
+    # 'available_geometry': PyQt5.QtCore.QRect(-2560, 0, 2560, 1540), 
+    # 'logical_dpi': 120.0, 
+    # 'physical_dpi': 188.74930906639702, 
+    # 'logical_dpi_x': 120.0, 
+    # 'physical_dpi_x': 188.47536231884058}
     
     # 变换单位
     def unit_conversion(self, lt, rb):
@@ -164,14 +188,8 @@ class MagnifierWidget(QWidget):
             elif measure_unit == 'pt':
                 scale_factor = screen_info['logical_size'].width() / screen_info['physical_size'].width()
                 temp[index] = value / scale_factor / 25.4 * 72
-            elif measure_unit == 'dp':
-                density_scale_factor = screen_info['physical_size_x'] / screen_info['logical_size_x']
-                temp[index] = value / density_scale_factor
-            elif measure_unit == 'sp':
-                density_scale_factor = screen_info['logical_dpi_x'] / screen_info['physical_dpi_x']
-                temp[index] = value / density_scale_factor
             elif measure_unit == 'rpx':
-                scale_factor = screen_info['logical_dpi'] / 750
+                scale_factor = screen_info['logical_size'].width() / 750
                 temp[index] = value / scale_factor
             elif measure_unit == 'vw':
                 pass
